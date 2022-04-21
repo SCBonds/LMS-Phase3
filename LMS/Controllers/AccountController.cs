@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using LMS.Models;
 using LMS.Models.AccountViewModels;
 using LMS.Services;
+using LMS.Models.LMSModels;
 
 namespace LMS.Controllers
 {
@@ -484,7 +485,26 @@ namespace LMS.Controllers
     /// <returns>A unique uID that is not be used by anyone else</returns>
     public string CreateNewUser(string fName, string lName, DateTime DOB, string SubjectAbbrev, string role)
     {
-      return "";
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+            var query = from a in db.Administrators
+                        join p in db.Professors
+                        on a.UId equals p.UId
+                        into ap
+                        from t in ap.DefaultIfEmpty()
+
+                        join s in db.Students
+                        on t.UId equals s.UId
+                        into total
+                        from all in total.DefaultIfEmpty()
+                        select new
+                        {
+                            uID = all.UId
+                        };
+
+            var max = query.Max();
+        }
+        return "";
     }
 
     /*******End code to modify********/

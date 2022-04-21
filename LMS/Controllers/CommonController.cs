@@ -12,10 +12,6 @@ namespace LMS.Controllers
   {
 
     /*******Begin code to modify********/
-
-    // TODO: Uncomment and change 'X' after you have scaffoled
-
-    
     protected Team14LMSContext db;
 
     public CommonController()
@@ -30,8 +26,6 @@ namespace LMS.Controllers
      *          The "right" way is through Dependency Injection via the constructor 
      *          (look this up if interested).
     */
-
-    // TODO: Uncomment and change 'X' after you have scaffoled
     
     public void UseLMSContext(Team14LMSContext ctx)
     {
@@ -68,9 +62,6 @@ namespace LMS.Controllers
 
                 return Json(query.ToArray());
             }
-
-            // TODO: Do not return this hard-coded array.
-            // return Json(new[] { new { name = "None", subject = "NONE" } });
     }
 
 
