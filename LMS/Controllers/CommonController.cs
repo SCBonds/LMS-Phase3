@@ -57,8 +57,20 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetDepartments()
     {
-      // TODO: Do not return this hard-coded array.
-      return Json(new[] { new { name = "None", subject = "NONE" } });
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var query = from d in db.Departments
+                            select new
+                            {
+                                name = d.Name,
+                                subject = d.Subject
+                            };
+
+                return Json(query.ToArray());
+            }
+
+            // TODO: Do not return this hard-coded array.
+            // return Json(new[] { new { name = "None", subject = "NONE" } });
     }
 
 
