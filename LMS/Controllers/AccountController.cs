@@ -504,6 +504,8 @@ namespace LMS.Controllers
             if (highest < Int32.Parse(query3.OrderByDescending(x => x).First().Remove(0, 1)))
                 highest = Int32.Parse(query3.OrderByDescending(x => x).First().Remove(0, 1));
 
+            highest = highest + 1;
+
             switch (role)
             {
                 case "Administrator":
