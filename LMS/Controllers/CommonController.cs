@@ -182,8 +182,10 @@ namespace LMS.Controllers
                                 content = j2.Contents
                             };
 
+                return Content(Json(query));
+
             }
-            return Content("");
+            
         }
 
 
@@ -203,8 +205,45 @@ namespace LMS.Controllers
         /// <returns>The submission text</returns>
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
         {
+             using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var query = from co in db.Courses
+                            join cl in db.Classes
+                            on co.CourseId equals cl.CourseId
+                            into coCl
 
-            return Content("");
+                            from j in coCl.DefaultIfEmpty()
+                            join ac in db.AssignmentCategories
+                            on j.ClassId equals ac.ClassId
+                            into ccac
+
+                            from j1 in ccac.DefaultIfEmpty()
+                            join a in db.Assignments
+                            on j1.CategoryId equals a.CategoryId
+                            into acas
+
+                            from j2 in acas.DefaultIfEmpty()
+                            join s in db.Submission
+                            on j2.AssignmentId equals s.AssignmentId
+                            into all
+
+                            from j3 in all.DefaultIfEmpty()
+                            where co.Department == subject
+                            && co.Number == num
+                            && j.SemesterSeason == season 
+                            && j.SemesterYear == year
+                            && j1.Name == category
+                            && j2.Name == asgname
+                            && j3.StudentId == uid
+
+                            select new
+                            {
+                                Submission = j3.Contents
+                            };
+
+                return Content(Json(query));
+
+            }
         }
 
 
