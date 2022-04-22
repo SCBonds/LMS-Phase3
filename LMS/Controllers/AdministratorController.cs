@@ -94,9 +94,9 @@ namespace LMS.Controllers
 	/// false if the Course already exists.</returns>
     public IActionResult CreateCourse(string subject, int number, string name)
     {
-      
 
-      return Json(new { success = false });
+            //insert into Courses (Name, Number, Department) values ("Human Anatomy", 2325, "BIOL");
+            return Json(new { success = false });
     }
 
 

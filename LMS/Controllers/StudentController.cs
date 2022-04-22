@@ -118,32 +118,27 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-            var getClass = from s in db.Students
-                            join e in db.Enrolled
-                            on s.UId equals e.StudentId
-                            into e
-                            from enrolled in e.DefaultIfEmpty()
+            var getClass = from e in db.Enrolled
+                        join c in db.Classes
+                        on e.ClassId equals c.ClassId
+                        into cl
+                        from classes in cl.DefaultIfEmpty()
 
-                            join c in db.Classes
-                            on enrolled.ClassId equals c.ClassId
-                            into cl
-                            from classes in cl.DefaultIfEmpty()
+                        join courses in db.Courses
+                        on classes.CourseId equals courses.CourseId
+                        into data
+                        from all in data.DefaultIfEmpty()
 
-                            join courses in db.Courses
-                            on classes.CourseId equals courses.CourseId
-                            into data
-                            from all in data.DefaultIfEmpty()
+                        where e.StudentId == uid
+                        && all.Department == subject
+                        && all.Number == num
+                        && classes.SemesterSeason == season
+                        && classes.SemesterYear == year
 
-                            where enrolled.StudentId == uid
-                            && all.Department == subject
-                            && all.Number == num
-                            && classes.SemesterSeason == season
-                            && classes.SemesterYear == year
-
-                            select new
-                            {
-                                id = classes.ClassId
-                            };
+                        select new
+                        {
+                            id = classes.ClassId
+                        };
 
             var getAssignments = from c in getClass
                                 join ac in db.AssignmentCategories
@@ -240,9 +235,67 @@ namespace LMS.Controllers
     /// <param name="uid">The uid of the student</param>
     /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
     public IActionResult GetGPA(string uid)
-    {     
+    {
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+            double GPA = 0;
+            int nonNullCount = 0;
+            var query = from e in db.Enrolled
+                        where e.StudentId == uid
+                        select e.Grade;
 
-      return Json(null);
+            foreach (var item in query.ToArray())
+            {
+                if (item != null)
+                {
+                    switch (item.ToString())
+                    {
+                        case "A":
+                            GPA = GPA + 4.0;
+                            break;
+                        case "A-":
+                            GPA = GPA + 3.7;
+                            break;
+                        case "B+":
+                            GPA = GPA + 3.3;
+                            break;
+                        case "B":
+                            GPA = GPA + 3.0;
+                            break;
+                        case "B-":
+                            GPA = GPA + 2.7;
+                            break;
+                        case "C+":
+                            GPA = GPA + 2.3;
+                            break;
+                        case "C":
+                            GPA = GPA + 2.0;
+                            break;
+                        case "C-":
+                            GPA = GPA + 1.7;
+                            break;
+                        case "D+":
+                            GPA = GPA + 1.3;
+                            break;
+                        case "D":
+                            GPA = GPA + 1.0;
+                            break;
+                        case "D-":
+                            GPA = GPA + 0.7;
+                            break;
+                        case "E":
+                            GPA = GPA + 0.0;
+                            break;
+                    }
+                    nonNullCount++;
+                }
+            }
+
+            GPA = GPA / nonNullCount;
+
+
+            return Json(null);
+        }   
     }
 
     /*******End code to modify********/
