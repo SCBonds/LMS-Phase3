@@ -86,6 +86,7 @@ namespace LMS.Controllers
                             {
                                 dname = d.Name,
                                 subject = d.Subject
+                                //courses = select new 
                             };
 
                 return Json(query.ToArray());
@@ -182,7 +183,7 @@ namespace LMS.Controllers
                                 content = j2.Contents
                             };
 
-                return Content(Json(query));
+                return Content(query.ToArray()[1].ToString());
 
             }
             
@@ -241,7 +242,7 @@ namespace LMS.Controllers
                                 Submission = j3.Contents
                             };
 
-                return Content(Json(query));
+                return Content(query.ToArray()[1].ToString());
 
             }
         }
