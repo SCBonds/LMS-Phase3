@@ -44,6 +44,7 @@ namespace LMS.Controllers
         using (Team14LMSContext db = new Team14LMSContext())
         {
             var query = from c in db.Courses
+                        where c.Department == subject
                         select new
                         {
                             number = c.Number,
@@ -94,9 +95,29 @@ namespace LMS.Controllers
 	/// false if the Course already exists.</returns>
     public IActionResult CreateCourse(string subject, int number, string name)
     {
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+            var query = from c in db.Courses
+                        where c.Number == number
+                        && c.Name == name
+                        && c.Department == subject
+                        select c;
+            
+            if(query.Count() < 1)
+            {
+                Courses course = new Courses();
+                course.Name = name;
+                course.Number = (uint)number;
+                course.Department = subject;
 
-            //insert into Courses (Name, Number, Department) values ("Human Anatomy", 2325, "BIOL");
-            return Json(new { success = false });
+                db.Courses.Add(course);
+
+                db.SaveChanges();
+                return Json(new { success = true });
+            }
+            else { return Json(new { success = false }); }
+
+        }
     }
 
 
@@ -118,8 +139,61 @@ namespace LMS.Controllers
     /// a Class offering of the same Course in the same Semester.</returns>
     public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
     {
-      
-      return Json(new { success = false });
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+                var ifSameTime = from c in db.Classes
+                                 where c.Location == location
+                                 && c.SemesterSeason == season
+                                 && c.SemesterYear == year
+                                 && (start.TimeOfDay >= c.StartTime && start.TimeOfDay <= c.EndTime)
+                                 || (end.TimeOfDay >= c.StartTime && end.TimeOfDay <= c.EndTime)
+                                 || (c.StartTime >= start.TimeOfDay && c.StartTime <= end.TimeOfDay)
+                                 || (c.EndTime >= start.TimeOfDay && c.EndTime <= end.TimeOfDay)
+                                 select c;
+
+            var sameOffering = from c in db.Classes
+                               join courses in db.Courses
+                               on c.CourseId equals courses.CourseId
+                               into data
+                               from all in data.DefaultIfEmpty()
+
+                               where all.Number == number
+                               && all.Department == subject
+                               && c.SemesterSeason == season
+                               && c.SemesterYear == year
+                               select c;
+
+            var courseID = from course in db.Courses
+                            where course.Department == subject
+                            && course.Number == number
+                            select course.CourseId;
+
+            if (ifSameTime.Count() >= 1)
+            {
+                return Json(new { success = false });
+            }
+            else if (sameOffering.Count() >= 1)
+            {
+                return Json(new { success = false });
+            }
+            else 
+            { 
+                Classes cl = new Classes();
+                cl.ProfessorId = instructor;
+                cl.SemesterSeason = season;
+                cl.SemesterYear = (uint)year;
+                cl.Location = location;
+                cl.StartTime = start.TimeOfDay;
+                cl.EndTime = end.TimeOfDay;
+                cl.CourseId = courseID.ToArray()[0];
+
+                db.Classes.Add(cl);
+
+                db.SaveChanges();
+                return Json(new { success = true });
+
+            }
+        }
     }
 
 

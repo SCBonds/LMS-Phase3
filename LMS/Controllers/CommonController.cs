@@ -110,18 +110,21 @@ namespace LMS.Controllers
         {
             using (Team14LMSContext db = new Team14LMSContext())
             {
-                var query = from co in db.Courses
-                            where (co.Number == number && co.Department == subject)
-                            join cl in db.Classes
-                            on co.CourseId equals cl.CourseId
-                            into coCl
-                            
-                            from cc in coCl.DefaultIfEmpty()
+                var query = from cc in db.Classes
                             join p in db.Professors
                             on cc.ProfessorId equals p.UId
                             into clp
-                            
                             from classProf in clp.DefaultIfEmpty()
+
+                            join cl in db.Courses
+                            on cc.CourseId equals cl.CourseId
+                            into coCl
+                            from co in coCl.DefaultIfEmpty()
+
+
+                            where co.Number == number
+                            && co.Department == subject
+
                             select new
                             {
                                 season = cc.SemesterSeason,

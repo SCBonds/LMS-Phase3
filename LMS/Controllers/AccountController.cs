@@ -487,30 +487,35 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-            var query = from a in db.Administrators
-                        select a.UId;
+            int idNum = 0000000;
+            var query = from s in db.Students
+                        select s.UId;
+            idNum = Int32.Parse(query.ToArray().Max().Remove(0, 1));
 
-            int highest = Int32.Parse(query.OrderByDescending(x => x).First().Remove(0, 1));
 
             var query2 = from s in db.Students
-                        select s.UId;
+                            select s.UId;
+            int q2 = 0;
+            q2 = Int32.Parse(query2.ToArray().Max().Remove(0, 1));
+            if (idNum < q2)
+                idNum = q2;
 
-            if(highest < Int32.Parse(query2.OrderByDescending(x => x).First().Remove(0, 1)))
-                highest = Int32.Parse(query2.OrderByDescending(x => x).First().Remove(0, 1));
 
-            var query3 = from p in db.Professors
-                            select p.UId;
+            var query3 = from s in db.Students
+                            select s.UId;
+            int q3 = 0;
+            q3 = Int32.Parse(query3.ToArray().Max().Remove(0, 1));
+            if (idNum < q3)
+                idNum = q3;
 
-            if (highest < Int32.Parse(query3.OrderByDescending(x => x).First().Remove(0, 1)))
-                highest = Int32.Parse(query3.OrderByDescending(x => x).First().Remove(0, 1));
+            idNum = idNum + 1;
 
-            highest = highest + 1;
 
             switch (role)
             {
                 case "Administrator":
                     Administrators admin = new Administrators();
-                    admin.UId = "u" + highest.ToString();
+                    admin.UId = "u" + idNum.ToString();
                     admin.FName = fName;
                     admin.LName = lName;
                     admin.Dob = DOB;
@@ -518,7 +523,7 @@ namespace LMS.Controllers
                     break;
                 case "Professor":
                     Professors prof = new Professors();
-                    prof.UId = "u" + highest.ToString();
+                    prof.UId = "u" + idNum.ToString();
                     prof.FName = fName;
                     prof.LName = lName;
                     prof.Dob = DOB;
@@ -527,7 +532,7 @@ namespace LMS.Controllers
                     break;
                 case "Student":
                     Students stud = new Students();
-                    stud.UId = "u" + highest.ToString();
+                    stud.UId = "u" + idNum.ToString();
                     stud.FName = fName;
                     stud.LName = lName;
                     stud.Dob = DOB;
@@ -538,7 +543,8 @@ namespace LMS.Controllers
 
             db.SaveChanges();
 
-            return "u" + highest.ToString();
+            return "u" + idNum.ToString();
+
         }
     }
 
