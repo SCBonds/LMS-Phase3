@@ -70,14 +70,9 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-            var query = from s in db.Students
-                        join e in db.Enrolled
-                        on s.UId equals e.StudentId
-                        into e
-                        from enrolled in e.DefaultIfEmpty()
-
+            var query = from e in db.Enrolled
                         join c in db.Classes
-                        on enrolled.ClassId equals c.ClassId
+                        on e.ClassId equals c.ClassId
                         into cl
                         from classes in cl.DefaultIfEmpty()
 
@@ -85,7 +80,7 @@ namespace LMS.Controllers
                         on classes.CourseId equals courses.CourseId
                         into data
                         from all in data.DefaultIfEmpty()
-                        where enrolled.StudentId == uid
+                        where e.StudentId == uid
                         select new
                         {
                             subject = all.Department,
@@ -93,7 +88,7 @@ namespace LMS.Controllers
                             name = all.Name,
                             season = classes.SemesterSeason,
                             year = classes.SemesterYear,
-                            grade = enrolled.Grade
+                            grade = e.Grade
                         };
 
             return Json(query.ToArray());
@@ -118,62 +113,47 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-            var getClass = from e in db.Enrolled
-                        join c in db.Classes
-                        on e.ClassId equals c.ClassId
-                        into cl
-                        from classes in cl.DefaultIfEmpty()
+            var query = from e in db.Enrolled
+                           join c in db.Classes
+                           on e.ClassId equals c.ClassId
+                           into cl
+                           from classes in cl.DefaultIfEmpty()
 
-                        join courses in db.Courses
-                        on classes.CourseId equals courses.CourseId
-                        into data
-                        from all in data.DefaultIfEmpty()
+                           join courses in db.Courses
+                           on classes.CourseId equals courses.CourseId
+                           into data
+                           from all in data.DefaultIfEmpty()
 
-                        where e.StudentId == uid
-                        && all.Department == subject
-                        && all.Number == num
-                        && classes.SemesterSeason == season
-                        && classes.SemesterYear == year
+                           join ac in db.AssignmentCategories
+                           on classes.ClassId equals ac.ClassId
+                           into cat
+                           from categories in cat.DefaultIfEmpty()
 
-                        select new
-                        {
-                            id = classes.ClassId
-                        };
+                           join a in db.Assignments
+                           on categories.CategoryId equals a.CategoryId
+                           into assignments
+                           from x in assignments.DefaultIfEmpty()
 
-            var getAssignments = from c in getClass
-                                join ac in db.AssignmentCategories
-                                on c.id equals ac.ClassId
-                                into cat
-                                from categories in cat.DefaultIfEmpty()
+                           join s in db.Submission
+                           on new { A = x.AssignmentId, B = uid } equals new { A = s.AssignmentId, B = s.StudentId }
+                           into joined
+                           from j in joined.DefaultIfEmpty()
 
-                                join a in db.Assignments
-                                on categories.CategoryId equals a.CategoryId
-                                into assignments
-                                from all in assignments.DefaultIfEmpty()
+                           where e.StudentId == uid
+                           && all.Department == subject
+                           && all.Number == num
+                           && classes.SemesterSeason == season
+                           && classes.SemesterYear == year
 
-                                select new
-                                {
-                                    id = all.AssignmentId,
-                                    name = all.Name,
-                                    cat = categories.Name,
-                                    due = all.Due
-                                };
-
-            var getSub = from a in getAssignments
-                            join s in db.Submission
-                            on new { A = a.id, B = uid } equals new { A = s.AssignmentId, B = s.StudentId }
-                            into joined
-                            from j in joined.DefaultIfEmpty()
                             select new
                             {
-                                aname = a.name,
-                                cName = a.cat,
-                                due = a.due,
+                                aname = x.Name,
+                                cname = categories.Name,
+                                due = x.Due,
                                 score = j.Score == null ? null : (uint?)j.Score
                             };
 
-
-            return Json(getSub.ToArray());
+            return Json(query.ToArray());
         }
     }
 
@@ -200,8 +180,62 @@ namespace LMS.Controllers
     public IActionResult SubmitAssignmentText(string subject, int num, string season, int year, 
       string category, string asgname, string uid, string contents)
     {
-     
-      return Json(new { success = false });
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+            var getAssignment = from a in db.Assignments
+                        join ac in db.AssignmentCategories
+                        on a.CategoryId equals ac.CategoryId
+                        into cat
+                        from categories in cat.DefaultIfEmpty()
+
+                        join c in db.Classes
+                        on categories.ClassId equals c.ClassId
+                        into cl
+                        from all in cl.DefaultIfEmpty()
+
+                        join co in db.Courses
+                        on all.CourseId equals co.CourseId
+                        into cour
+                        from courses in cour.DefaultIfEmpty()
+
+                        where all.SemesterSeason == season
+                        && all.SemesterYear == year
+                        && categories.Name == category
+                        && a.Name == asgname
+                        && courses.Number == num
+                        && courses.Department == subject
+
+                        select new
+                        {
+                            aID = a.AssignmentId
+                        };
+
+            var submission = from s in db.Submission
+                                where s.AssignmentId == Int32.Parse(getAssignment.ToArray()[0].aID.ToString())
+                                && s.StudentId == uid
+                                select s;
+
+            if (submission.ToArray().Count() > 0)
+            {
+                submission.ToArray()[0].Contents = contents;
+                submission.ToArray()[0].Time = DateTime.Now;
+
+                db.SaveChanges();
+            }
+            else
+            {
+                Submission s = new Submission();
+                s.AssignmentId = getAssignment.ToArray()[0].aID;
+                s.StudentId = uid;
+                s.Contents = contents;
+                s.Score = 0;
+                s.Time = DateTime.Now;
+
+                db.SaveChanges();
+            }
+
+            return Json(new { success = true });
+        }
     }
 
     
@@ -216,9 +250,44 @@ namespace LMS.Controllers
     /// <returns>A JSON object containing {success = {true/false},
 	/// false if the student is already enrolled in the Class.</returns>
     public IActionResult Enroll(string subject, int num, string season, int year, string uid)
-    {      
+    {
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+                var enrolled = from e in db.Enrolled
+                               join c in db.Classes
+                               on e.ClassId equals c.ClassId
+                               into ec
+                               from eClass in ec.DefaultIfEmpty()
 
-      return Json(new { success = false });
+                               join cour in db.Courses
+                               on eClass.CourseId equals cour.CourseId
+                               into course
+                               from courses in course.DefaultIfEmpty()
+
+                               where eClass.SemesterSeason == season
+                               && eClass.SemesterYear == year
+                               && courses.Department == subject
+                               && courses.Number == num
+                               && e.StudentId == uid
+                               select new
+                               {
+                                   classID = eClass.ClassId,
+                               };
+
+                if (enrolled.ToArray().Count() > 0)
+                {
+                    return Json(new { success = false });
+                }
+                else
+                {
+                    Enrolled e = new Enrolled();
+                    e.StudentId = uid;
+                    e.ClassId = enrolled.ToArray()[0].classID;
+                    db.SaveChanges();
+
+                    return Json(new { success = true });
+                }
+        }
     }
 
 
@@ -294,7 +363,7 @@ namespace LMS.Controllers
             GPA = GPA / nonNullCount;
 
 
-            return Json(null);
+            return Json(new {gpa = GPA});
         }   
     }
 

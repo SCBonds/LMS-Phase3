@@ -488,21 +488,22 @@ namespace LMS.Controllers
         using (Team14LMSContext db = new Team14LMSContext())
         {
             int idNum = 0000000;
+
             var query = from s in db.Students
                         select s.UId;
             idNum = Int32.Parse(query.ToArray().Max().Remove(0, 1));
 
 
-            var query2 = from s in db.Students
-                            select s.UId;
+            var query2 = from p in db.Professors
+                            select p.UId;
             int q2 = 0;
             q2 = Int32.Parse(query2.ToArray().Max().Remove(0, 1));
             if (idNum < q2)
                 idNum = q2;
 
 
-            var query3 = from s in db.Students
-                            select s.UId;
+            var query3 = from a in db.Administrators
+                            select a.UId;
             int q3 = 0;
             q3 = Int32.Parse(query3.ToArray().Max().Remove(0, 1));
             if (idNum < q3)

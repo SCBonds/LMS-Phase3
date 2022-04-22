@@ -84,9 +84,9 @@ namespace LMS.Controllers
                 var query = from d in db.Departments
                             select new
                             {
+                                subject = d.Subject,
                                 dname = d.Name,
-                                subject = d.Subject
-                                //courses = select new 
+                                courses = (from c in db.Courses where c.Department == d.Subject select new { number = c.Number, cname = c.Name })
                             };
 
                 return Json(query.ToArray());
@@ -133,7 +133,7 @@ namespace LMS.Controllers
                                 location = cc.Location,
                                 start = cc.StartTime,
                                 end = cc.EndTime,
-                                fname = classProf.FName, // ?? is there a point where these could be NULL??
+                                fname = classProf.FName, 
                                 lname = classProf.LName
                             };
 
@@ -158,36 +158,35 @@ namespace LMS.Controllers
             // Will need courses
             using (Team14LMSContext db = new Team14LMSContext())
             {
-                var query = from co in db.Courses
-                            join cl in db.Classes
-                            on co.CourseId equals cl.CourseId
-                            into coCl
+                var query = from classes in db.Classes
+                            join courses in db.Courses
+                            on classes.CourseId equals courses.CourseId
+                            into data
+                            from all in data.DefaultIfEmpty()
 
-                            from j in coCl.DefaultIfEmpty()
                             join ac in db.AssignmentCategories
-                            on j.ClassId equals ac.ClassId
-                            into ccac
+                            on classes.ClassId equals ac.ClassId
+                            into cat
+                            from categories in cat.DefaultIfEmpty()
 
-                            from j1 in ccac.DefaultIfEmpty()
                             join a in db.Assignments
-                            on j1.CategoryId equals a.CategoryId
-                            into all
+                            on categories.CategoryId equals a.CategoryId
+                            into assignments
+                            from x in assignments.DefaultIfEmpty()
 
-                            from j2 in all.DefaultIfEmpty()
-                            where co.Department == subject
-                            && co.Number == num
-                            && j.SemesterSeason == season 
-                            && j.SemesterYear == year
-                            && j1.Name == category
-                            && j2.Name == asgname
+                            where all.Department == subject
+                            && all.Number == num
+                            && classes.SemesterSeason == season
+                            && classes.SemesterYear == year
+                            && categories.Name == category
+                            && x.Name == asgname
 
                             select new
                             {
-                                content = j2.Contents
+                                content = x.Contents
                             };
 
-                return Content(query.ToArray()[1].ToString());
-
+                return Content(query.ToArray()[0].content.ToString());
             }
             
         }
@@ -245,7 +244,10 @@ namespace LMS.Controllers
                                 Submission = j3.Contents
                             };
 
-                return Content(query.ToArray()[1].ToString());
+                if (query.ToArray().Count() > 0)
+                    return Content(query.ToArray()[0].ToString());
+                else
+                    return Content("");
 
             }
         }
@@ -271,34 +273,52 @@ namespace LMS.Controllers
         {
             using (Team14LMSContext db = new Team14LMSContext())
             {
-                var query = from stu in db.Students
-                            join p in db.Professors
-                            on stu.UId equals p.UId
-                            into sp
+                var stud = from stu in db.Students
+                           where stu.UId == uid
+                           select new
+                           {
+                               fname = stu.FName,
+                               lname = stu.LName,
+                               uid = uid,
+                               department = stu.Major
+                           };
 
-                            from j in sp.DefaultIfEmpty()
-                            join a in db.Administrators
-                            on j.UId equals a.UId
-                            into spa
+                var admin = from ad in db.Administrators
+                           where ad.UId == uid
+                           select new
+                           {
+                               fname = ad.FName,
+                               lname = ad.LName,
+                               uid = uid,
+                           };
 
-                            from j1 in spa.DefaultIfEmpty()
-                            where j1.UId == uid
-                            select new
-                            {
-                                fname = j1.FName,
-                                lname = j1.LName,
-                                
-                                department = (stu.Major != null ? stu.Major : (j.Department != null ? j.Department : null))
-                            };
+                var prof = from pro in db.Professors
+                           where pro.UId == uid
+                           select new
+                           {
+                               fname = pro.FName,
+                               lname = pro.LName,
+                               uid = uid,
+                               department = pro.Department
+                           };
 
-                // only returns if there are elements present from the query (i.e. uid was found)
-                if (query.Any()) 
+                if (stud.ToArray().Count() > 0) 
                 {
-                    return Json(query.ToArray()); ;
-                }             
+                    return Json(stud.ToArray()[0]);
+                }
+
+                if (admin.ToArray().Count() > 0)
+                {
+                    return Json(admin.ToArray()[0]);
+                }
+
+                if (prof.ToArray().Count() > 0)
+                {
+                    return Json(prof.ToArray()[0]);
+                }
+
+                return Json(new { success = false });
             }
-            // returns false otherwise
-            return Json(new { success = false });
         }
 
 

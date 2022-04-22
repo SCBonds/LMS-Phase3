@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -105,8 +106,40 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
     {
-      
-      return Json(null);
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+            var query = from e in db.Enrolled
+                        join c in db.Classes
+                        on e.ClassId equals c.ClassId
+                        into ec
+                        from classes in ec.DefaultIfEmpty()
+
+                        join cr in db.Courses
+                        on classes.CourseId equals cr.CourseId
+                        into cour
+                        from course in cour.DefaultIfEmpty()
+
+                        join s in db.Students
+                        on e.StudentId equals s.UId
+                        into all
+                        from data in all.DefaultIfEmpty()
+
+                        where course.Department == subject
+                        && course.Number == num
+                        && classes.SemesterSeason == season
+                        && classes.SemesterYear == year
+
+                        select new
+                        {
+                            fname = data.FName,
+                            lname = data.LName,
+                            uid = data.UId,
+                            dob = data.Dob,
+                            grade = e.Grade
+                        };
+
+            return Json(query.ToArray());
+        }
     }
 
 
