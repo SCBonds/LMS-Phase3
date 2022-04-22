@@ -481,30 +481,63 @@ namespace LMS.Controllers
     /// <param name="lName">Last Name</param>
     /// <param name="DOB">Date of Birth</param>
     /// <param name="SubjectAbbrev">The department the user belongs to (professors and students only)</param>
-    /// <param name="SubjectAbbrev">The user's role: one of "Administrator", "Professor", "Student"</param> 
+    /// <param name="role">The user's role: one of "Administrator", "Professor", "Student"</param> 
     /// <returns>A unique uID that is not be used by anyone else</returns>
     public string CreateNewUser(string fName, string lName, DateTime DOB, string SubjectAbbrev, string role)
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
             var query = from a in db.Administrators
-                        join p in db.Professors
-                        on a.UId equals p.UId
-                        into ap
-                        from t in ap.DefaultIfEmpty()
+                        select a.UId;
 
-                        join s in db.Students
-                        on t.UId equals s.UId
-                        into total
-                        from all in total.DefaultIfEmpty()
-                        select new
-                        {
-                            uID = all.UId
-                        };
+            int highest = Int32.Parse(query.OrderByDescending(x => x).First().Remove(0, 1));
 
-            var max = query.Max();
+            var query2 = from s in db.Students
+                        select s.UId;
+
+            if(highest < Int32.Parse(query2.OrderByDescending(x => x).First().Remove(0, 1)))
+                highest = Int32.Parse(query2.OrderByDescending(x => x).First().Remove(0, 1));
+
+            var query3 = from p in db.Professors
+                            select p.UId;
+
+            if (highest < Int32.Parse(query3.OrderByDescending(x => x).First().Remove(0, 1)))
+                highest = Int32.Parse(query3.OrderByDescending(x => x).First().Remove(0, 1));
+
+            switch (role)
+            {
+                case "Administrator":
+                    Administrators admin = new Administrators();
+                    admin.UId = "u" + highest.ToString();
+                    admin.FName = fName;
+                    admin.LName = lName;
+                    admin.Dob = DOB;
+                    db.Administrators.Add(admin);
+                    break;
+                case "Professor":
+                    Professors prof = new Professors();
+                    prof.UId = "u" + highest.ToString();
+                    prof.FName = fName;
+                    prof.LName = lName;
+                    prof.Dob = DOB;
+                    prof.Department = SubjectAbbrev;
+                    db.Professors.Add(prof);
+                    break;
+                case "Student":
+                    Students stud = new Students();
+                    stud.UId = "u" + highest.ToString();
+                    stud.FName = fName;
+                    stud.LName = lName;
+                    stud.Dob = DOB;
+                    stud.Major = SubjectAbbrev;
+                    db.Students.Add(stud);
+                    break;
+            }
+
+            db.SaveChanges();
+
+            return "u" + highest.ToString();
         }
-        return "";
     }
 
     /*******End code to modify********/
