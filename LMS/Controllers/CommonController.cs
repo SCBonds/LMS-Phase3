@@ -265,6 +265,32 @@ namespace LMS.Controllers
         /// </returns>
         public IActionResult GetUser(string uid)
         {
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var query = from stu in db.Students
+                            join p in db.Professors
+                            on stu.UId equals p.UId
+                            into sp
+
+                            from j in sp.DefaultIfEmpty()
+                            join a in db.Administrators
+                            on j.UId equals a.UId
+                            into spa
+
+                            from j1 in spa.DefaultIfEmpty()
+                            where j1.UId == uid
+                            select new
+                            {
+                                fname = j1.FName,
+                                lname = j1.LName,
+                                
+                                department = (stu.Major != null ? stu.Major : (j.Department != null ? j.Department : null))
+                            };
+
+                return Json(query.ToArray()); ;
+
+            }
+
 
             return Json(new { success = false });
         }
