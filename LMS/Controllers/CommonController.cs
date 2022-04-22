@@ -287,11 +287,13 @@ namespace LMS.Controllers
                                 department = (stu.Major != null ? stu.Major : (j.Department != null ? j.Department : null))
                             };
 
-                return Json(query.ToArray()); ;
-
+                // only returns if there are elements present from the query (i.e. uid was found)
+                if (query.Any()) 
+                {
+                    return Json(query.ToArray()); ;
+                }             
             }
-
-
+            // returns false otherwise
             return Json(new { success = false });
         }
 
