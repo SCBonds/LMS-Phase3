@@ -255,28 +255,30 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-                var enrolled = from e in db.Enrolled
-                               join c in db.Classes
-                               on e.ClassId equals c.ClassId
-                               into ec
-                               from eClass in ec.DefaultIfEmpty()
-
+                var e1 = from c in db.Classes
                                join cour in db.Courses
-                               on eClass.CourseId equals cour.CourseId
+                               on c.CourseId equals cour.CourseId
                                into course
                                from courses in course.DefaultIfEmpty()
 
-                               where eClass.SemesterSeason == season
-                               && eClass.SemesterYear == year
+                               where c.SemesterSeason == season
+                               && c.SemesterYear == year
                                && courses.Department == subject
                                && courses.Number == num
-                               && e.StudentId == uid
+                               
                                select new
                                {
-                                   classID = eClass.ClassId,
+                                   classID = c.ClassId
                                };
 
-                if (enrolled.ToArray().Count() > 0)
+                var e2 = from e in db.Enrolled
+                         where e.StudentId == uid
+                         && e.ClassId == (uint)e1.ToArray()[0].classID
+
+                         select e;
+
+
+                if (e2.ToArray().Count() > 0)
                 {
                     return Json(new { success = false });
                 }
@@ -284,7 +286,8 @@ namespace LMS.Controllers
                 {
                     Enrolled e = new Enrolled();
                     e.StudentId = uid;
-                    e.ClassId = enrolled.ToArray()[0].classID;
+                    e.ClassId = e1.ToArray()[0].classID;
+                    e.Grade = "";
 
                     db.Enrolled.Add(e);
                     db.SaveChanges();
