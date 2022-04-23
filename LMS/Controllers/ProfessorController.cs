@@ -197,7 +197,6 @@ namespace LMS.Controllers
                                     aname = j2.Name,
                                     cname = j1.Name,
                                     due = j2.Due,
-                                    // what would be the best way to get the count of this??
                                     submissions = (from s in db.Submission where s.AssignmentId == j2.AssignmentId select s).Count()
                                 };
 
@@ -299,7 +298,6 @@ namespace LMS.Controllers
                     if (classID.Count() != 0)
                     {
                         AssignmentCategories assCat = new AssignmentCategories();
-                        // still need classID
                         assCat.Name = category;
                         assCat.Weight = (uint)catweight;
                         assCat.ClassId = classID.ToArray()[0];
