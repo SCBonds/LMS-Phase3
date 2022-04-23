@@ -213,7 +213,7 @@ namespace LMS.Controllers
                                 into ccac
 
                                 from j1 in ccac.DefaultIfEmpty()
-                                join a in db.AssignmentsGet
+                                join a in db.Assignments
                                 on j1.CategoryId equals a.CategoryId
                                 into acas
 
