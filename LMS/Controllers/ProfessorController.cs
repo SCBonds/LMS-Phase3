@@ -144,74 +144,88 @@ namespace LMS.Controllers
 
 
 
-    /// <summary>
-    /// Returns a JSON array with all the assignments in an assignment category for a class.
-    /// If the "category" parameter is null, return all assignments in the class.
-    /// Each object in the array should have the following fields:
-    /// "aname" - The assignment name
-    /// "cname" - The assignment category name.
-    /// "due" - The due DateTime
-    /// "submissions" - The number of submissions to the assignment
-    /// </summary>
-    /// <param name="subject">The course subject abbreviation</param>
-    /// <param name="num">The course number</param>
-    /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
-    /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
-    /// <param name="category">The name of the assignment category in the class, 
-    /// or null to return assignments from all categories</param>
-    /// <returns>The JSON array</returns>
-    public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
-    {
+        /// <summary>
+        /// Returns a JSON array with all the assignments in an assignment category for a class.
+        /// If the "category" parameter is null, return all assignments in the class.
+        /// Each object in the array should have the following fields:
+        /// "aname" - The assignment name
+        /// "cname" - The assignment category name.
+        /// "due" - The due DateTime
+        /// "submissions" - The number of submissions to the assignment
+        /// </summary>
+        /// <param name="subject">The course subject abbreviation</param>
+        /// <param name="num">The course number</param>
+        /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
+        /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
+        /// <param name="category">The name of the assignment category in the class, 
+        /// or null to return assignments from all categories</param>
+        /// <returns>The JSON array</returns>
+        public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
+        {
             using (Team14LMSContext db = new Team14LMSContext())
             {
-                   var query = from a in db.Assignments
-                                join ac in db.AssignmentCategories
-                                on a.CategoryId equals ac.CategoryId
-                                into c
-                                from cat in c.DefaultIfEmpty()
+                var query = from a in db.Assignments
+                            join ac in db.AssignmentCategories
+                            on a.CategoryId equals ac.CategoryId
+                            into c
+                            from cat in c.DefaultIfEmpty()
 
-                                join cl in db.Classes
-                                on cat.ClassId equals cl.ClassId
-                                into cla
-                                from classes in cla.DefaultIfEmpty()
+                            join cl in db.Classes
+                            on cat.ClassId equals cl.ClassId
+                            into cla
+                            from classes in cla.DefaultIfEmpty()
 
-                                join cr in db.Courses
-                                on classes.CourseId equals cr.CourseId
-                                into f
-                                from final in f.DefaultIfEmpty()
+                            join cr in db.Courses
+                            on classes.CourseId equals cr.CourseId
+                            into f
+                            from final in f.DefaultIfEmpty()
 
-                                where final.Department == subject
-                                && final.Number == num
-                                && classes.SemesterSeason == season
-                                && classes.SemesterYear == year
-                                && cat.Name == category
+                            where final.Department == subject
+                            && final.Number == num
+                            && classes.SemesterSeason == season
+                            && classes.SemesterYear == year
 
-                                select new
-                                {
-                                    aname = a.Name,
-                                    cname = cat.Name,
-                                    due = a.Due,
-                                    submissions = (from s in db.Submission where s.AssignmentId == a.AssignmentId select s).Count()
-                                };
+                            select new
+                            {
+                                aname = a.Name,
+                                cname = cat.Name,
+                                due = a.Due,
+                                submissions = (from s in db.Submission where s.AssignmentId == a.AssignmentId select s).Count()
+                            };
 
-                return Json(query.ToArray());
+                var query2 = from x in query
+                             where x.cname == category
+                             select new
+                             {
+                                 aname = x.aname,
+                                 cname = x.cname,
+                                 due = x.due,
+                                 submissions = x.submissions
+                             };
+
+                if (category == null)
+                    return Json(query.ToArray());
+                else
+                    return Json(query2.ToArray());
+
             }
-    }
+        }
 
 
-    /// <summary>
-    /// Returns a JSON array of the assignment categories for a certain class.
-    /// Each object in the array should have the folling fields:
-    /// "name" - The category name
-    /// "weight" - The category weight
-    /// </summary>
-    /// <param name="subject">The course subject abbreviation</param>
-    /// <param name="num">The course number</param>
-    /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
-    /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
-    /// <param name="category">The name of the assignment category in the class</param>
-    /// <returns>The JSON array</returns>
-    public IActionResult GetAssignmentCategories(string subject, int num, string season, int year)
+
+        /// <summary>
+        /// Returns a JSON array of the assignment categories for a certain class.
+        /// Each object in the array should have the folling fields:
+        /// "name" - The category name
+        /// "weight" - The category weight
+        /// </summary>
+        /// <param name="subject">The course subject abbreviation</param>
+        /// <param name="num">The course number</param>
+        /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
+        /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
+        /// <param name="category">The name of the assignment category in the class</param>
+        /// <returns>The JSON array</returns>
+        public IActionResult GetAssignmentCategories(string subject, int num, string season, int year)
     {
             using (Team14LMSContext db = new Team14LMSContext())
             {
@@ -499,17 +513,24 @@ namespace LMS.Controllers
                         && assignment.Name == asgname
                         && all.UId == uid
 
-                        select s;
+                        select new
+                        {
+                            classID = classes.ClassId,
+                            s
+                        };
 
             if (query.ToArray().Count() > 0)
             {
-                query.ToArray()[0].Score = (uint)score;
+                query.ToArray()[0].s.Score = (uint)score;
                 db.SaveChanges();
 
-                return Json(new { success = true });
+                    //UpdateClassGrade(uid, query.ToArray()[0].classID);
+
+                    return Json(new { success = true });
             }
             else
                 return Json(new { success = false });
+
         }
     }
 
@@ -551,7 +572,118 @@ namespace LMS.Controllers
         }
 
 
-    /*******End code to modify********/
+        /*******End code to modify********/
+
+        //public void UpdateClassGrade(string uid, uint ClassID)
+        //{
+        //    using (Team14LMSContext db = new Team14LMSContext())
+        //    {
+        //        var selectedClass = from c in db.Classes
+        //                            where c.ClassId == ClassID
+        //                            select new { catCount = c.AssignmentCategories.Count() };
+
+
+        //        var getNonEmptyCategories = from ac in db.AssignmentCategories
+        //                                    where ac.ClassId == ClassID
+        //                                    && ac.Assignments.Count() > 0
+
+        //                                    select new
+        //                                    {
+        //                                        catId = ac.CategoryId,
+        //                                        catWeight = ac.Weight,
+        //                                        assignments = ac.Assignments.ToArray()
+        //                                    };
+        //        long totalCatWeight = 0;
+        //        long totalWeightedVal = 0;
+        //        for ( int i = 0; i < selectedClass.ToArray()[0].catCount; i++)
+        //        {
+
+        //            long totalPoints = 0;
+        //            long totalScore = 0;
+        //            foreach (var x in getNonEmptyCategories.ToArray()[i].assignments)
+        //            {
+        //                totalPoints = totalPoints + x.Points;
+
+        //                var getSubmissions = from s in db.Submission
+        //                                     where x.AssignmentId == s.AssignmentId
+        //                                     select new { score = s.Score };
+
+
+        //                for(int r = 0; r < getSubmissions.ToArray().Count(); r++)
+        //                {
+        //                    totalScore = totalScore + getSubmissions.ToArray()[r].score;
+        //                }
+        //            }
+
+        //            long p = totalScore / totalPoints;
+
+        //            long weighted = p * getNonEmptyCategories.ToArray()[0].catWeight;
+
+        //            totalWeightedVal = totalWeightedVal + weighted;
+
+        //            totalCatWeight = totalCatWeight + getNonEmptyCategories.ToArray()[i].catWeight;
+
+
+        //        }
+
+        //        long scalingFactor = 100 / totalCatWeight;
+
+        //        long percent = scalingFactor * totalWeightedVal;
+
+        //        string letterGrade = "";
+
+        //        if (percent >= .93)
+        //        {
+        //            letterGrade = "A";
+        //        }
+        //        else if (percent >= .90)
+        //        {
+        //            letterGrade = "A-";
+        //        }
+        //        else if (percent >= .87)
+        //        {
+        //            letterGrade = "B+";
+        //        }
+        //        else if (percent >= .83)
+        //        {
+        //            letterGrade = "B";
+        //        }
+        //        else if (percent >= .80)
+        //        {
+        //            letterGrade = "B-";
+        //        }
+        //        else if (percent >= .77)
+        //        {
+        //            letterGrade = "C+";
+        //        }
+        //        else if (percent >= .73)
+        //        {
+        //            letterGrade = "C";
+        //        }
+        //        else if (percent >= .70)
+        //        {
+        //            letterGrade = "C-";
+        //        }
+        //        else if (percent >= .67)
+        //        {
+        //            letterGrade = "D+";
+        //        }
+        //        else if (percent >= .63)
+        //        {
+        //            letterGrade = "D";
+        //        }
+        //        else if (percent >= .60)
+        //        {
+        //            letterGrade = "D-";
+        //        }
+        //        else
+        //        {
+        //            letterGrade = "E";
+        //        }
+
+        //        Console.WriteLine(letterGrade);
+        //    }
+        //}
 
   }
 }
