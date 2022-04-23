@@ -141,6 +141,7 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
+            // Query that determines if class information will overlap with any other class times
             var ifSameTime = from c in db.Classes
                                 where c.Location == location
                                 && c.SemesterSeason == season
@@ -151,18 +152,20 @@ namespace LMS.Controllers
                                 || (c.EndTime >= start.TimeOfDay && c.EndTime <= end.TimeOfDay))
                                 select c;
 
+            // Query that determines if class information will create a duplicate listing
             var sameOffering = from c in db.Classes
-                               join courses in db.Courses
-                               on c.CourseId equals courses.CourseId
-                               into data
-                               from all in data.DefaultIfEmpty()
+                            join courses in db.Courses
+                            on c.CourseId equals courses.CourseId
+                            into data
+                            from all in data.DefaultIfEmpty()
 
-                               where all.Number == number
-                               && all.Department == subject
-                               && c.SemesterSeason == season
-                               && c.SemesterYear == year
-                               select c;
+                            where all.Number == number
+                            && all.Department == subject
+                            && c.SemesterSeason == season
+                            && c.SemesterYear == year
+                            select c;
 
+            // Gets the courseID for insert
             var courseID = from course in db.Courses
                             where course.Department == subject
                             && course.Number == number
