@@ -243,7 +243,6 @@ namespace LMS.Controllers
 
                 return Json(query.ToArray());
             }
-            return Json(null);
     }
 
 
@@ -260,9 +259,37 @@ namespace LMS.Controllers
     /// <param name="category">The name of the assignment category in the class</param>
     /// <returns>The JSON array</returns>
     public IActionResult GetAssignmentCategories(string subject, int num, string season, int year)
-    {      
+    {
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var query = from co in db.Courses
+                            join cl in db.Classes
+                            on co.CourseId equals cl.CourseId
+                            into coCl
 
-      return Json(null);
+                            from j in coCl.DefaultIfEmpty()
+                            join ac in db.AssignmentCategories
+                            on j.ClassId equals ac.ClassId
+                            into ccac
+
+                            from j1 in ccac.DefaultIfEmpty()
+                            where co.Department == subject
+                            && co.Number == num
+                            && j.SemesterSeason == season
+                            && j.SemesterYear == year
+
+                            select new
+                            {
+                                /// "name" - The category name
+                                /// "weight" - The category weight
+
+                                name = j.Name,
+                                weight = j1.Name
+                            };
+            }
+                
+
+            return Json(null);
     }
 
     /// <summary>
