@@ -202,7 +202,7 @@ namespace LMS.Controllers
                                 cname = j1.Name,
                                 due = j2.Due,
                                 // what would be the best way to get the count of this??
-                                submissions = j3.
+                                //submissions = j3.
                             };
 
                 return Json(query.ToArray());
@@ -286,8 +286,52 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetSubmissionsToAssignment(string subject, int num, string season, int year, string category, string asgname)
     {
-     
-      return Json(null);
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var query = from s in db.Submission
+                            join st in db.Students
+                            on s.StudentId equals st.UId
+                            into data
+                            from all in data.DefaultIfEmpty()
+
+                            join a in db.Assignments
+                            on s.AssignmentId equals a.AssignmentId
+                            into sa
+                            from assignment in sa.DefaultIfEmpty()
+
+                            join ac in db.AssignmentCategories
+                            on assignment.CategoryId equals ac.CategoryId
+                            into c
+                            from cat in c.DefaultIfEmpty()
+
+                            join cl in db.Classes
+                            on cat.ClassId equals cl.ClassId
+                            into cla
+                            from classes in cla.DefaultIfEmpty()
+
+                            join cr in db.Courses
+                            on classes.CourseId equals cr.CourseId
+                            into f
+                            from final in f.DefaultIfEmpty()
+
+                            where final.Department == subject
+                            && final.Number == num
+                            && classes.SemesterSeason == season
+                            && classes.SemesterYear == year
+                            && cat.Name == category
+                            && assignment.Name == asgname
+
+                            select new
+                            {
+                                fname = all.FName,
+                                lname = all.LName,
+                                uid = all.UId,
+                                time = s.Time,
+                                score = s.Score
+                            };
+
+                return Json(query.ToArray());
+            }
     }
 
 
@@ -304,9 +348,55 @@ namespace LMS.Controllers
     /// <param name="score">The new score for the submission</param>
     /// <returns>A JSON object containing success = true/false</returns>
     public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
-    {    
+    {
+        using (Team14LMSContext db = new Team14LMSContext())
+        {
+            var query = from s in db.Submission
+                        join st in db.Students
+                        on s.StudentId equals st.UId
+                        into data
+                        from all in data.DefaultIfEmpty()
 
-      return Json(new { success = true });
+                        join a in db.Assignments
+                        on s.AssignmentId equals a.AssignmentId
+                        into sa
+                        from assignment in sa.DefaultIfEmpty()
+
+                        join ac in db.AssignmentCategories
+                        on assignment.CategoryId equals ac.CategoryId
+                        into c
+                        from cat in c.DefaultIfEmpty()
+
+                        join cl in db.Classes
+                        on cat.ClassId equals cl.ClassId
+                        into cla
+                        from classes in cla.DefaultIfEmpty()
+
+                        join cr in db.Courses
+                        on classes.CourseId equals cr.CourseId
+                        into f
+                        from final in f.DefaultIfEmpty()
+
+                        where final.Department == subject
+                        && final.Number == num
+                        && classes.SemesterSeason == season
+                        && classes.SemesterYear == year
+                        && cat.Name == category
+                        && assignment.Name == asgname
+                        && all.UId == uid
+
+                        select s;
+
+            if (query.ToArray().Count() > 0)
+            {
+                query.ToArray()[0].Score = (uint)score;
+                db.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            else
+                return Json(new { success = false });
+        }
     }
 
 
@@ -322,10 +412,29 @@ namespace LMS.Controllers
     /// <param name="uid">The professor's uid</param>
     /// <returns>The JSON array</returns>
     public IActionResult GetMyClasses(string uid)
-    {     
+    {
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var query = from cl in db.Classes
+                            join c in db.Courses
+                            on cl.CourseId equals c.CourseId
+                            into data
+                            from all in data.DefaultIfEmpty()
 
-      return Json(null);
-    }
+                            where cl.ProfessorId == uid
+
+                            select new
+                            {
+                                subject = all.Department,
+                                number = all.Number,
+                                name = all.Name,
+                                season = cl.SemesterSeason,
+                                year = cl.SemesterYear
+                            };
+
+                return Json(query.ToArray());
+            }
+        }
 
 
     /*******End code to modify********/
