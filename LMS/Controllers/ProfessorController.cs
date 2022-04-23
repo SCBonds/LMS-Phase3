@@ -296,22 +296,25 @@ namespace LMS.Controllers
                                   select cl.ClassId;
 
 
-                    AssignmentCategories assCat = new AssignmentCategories();
-                    // still need classID
-                    assCat.Name = category;
-                    assCat.Weight = (uint)catweight;
-                    assCat.ClassId = classID.ToArray()[0];
+                    if (classID.Count() != 0)
+                    {
+                        AssignmentCategories assCat = new AssignmentCategories();
+                        // still need classID
+                        assCat.Name = category;
+                        assCat.Weight = (uint)catweight;
+                        assCat.ClassId = classID.ToArray()[0];
 
-                    db.AssignmentCategories.Add(assCat);
+                        db.AssignmentCategories.Add(assCat);
 
-                    db.SaveChanges();
+                        db.SaveChanges();
 
-                    return Json(new { success = true });
+                        return Json(new { success = true });
+                    }
+
+                    return Json(new { success = false });
                 }
 
             }
-
-            
 
             return Json(new { success = false });
     }
