@@ -165,43 +165,6 @@ namespace LMS.Controllers
             using (Team14LMSContext db = new Team14LMSContext())
             {
 
-                //if (category == null)
-                //{
-                //    var query = from co in db.Courses
-                //                join cl in db.Classes
-                //                on co.CourseId equals cl.CourseId
-                //                into coCl
-
-                //                from j in coCl.DefaultIfEmpty()
-                //                join ac in db.AssignmentCategories
-                //                on j.ClassId equals ac.ClassId
-                //                into ccac
-
-                //                from j1 in ccac.DefaultIfEmpty()
-                //                join a in db.Assignments
-                //                on j1.CategoryId equals a.CategoryId
-                //                into acas
-
-                //                from j2 in acas.DefaultIfEmpty()
-                //                where co.Department == subject
-                //                && co.Number == num
-                //                && j.SemesterSeason == season
-                //                && j.SemesterYear == year
-
-                //                select new
-                //                {
-                //                    /// "aname" - The assignment name
-                //                    /// "cname" - The assignment category name.
-                //                    /// "due" - The due DateTime
-                //                    /// "submissions" - The number of submissions to the assignment
-
-                //                    aname = j2.Name,
-                //                    cname = j1.Name,
-                //                    due = j2.Due,
-                //                    // what would be the best way to get the count of this??
-                //                    submissions = (from s in db.Submission where s.AssignmentId == j2.AssignmentId select s).Count()
-                //                };
-                //}
                     var query = from co in db.Courses
                                 join cl in db.Classes
                                 on co.CourseId equals cl.CourseId
