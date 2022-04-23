@@ -141,15 +141,15 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-                var ifSameTime = from c in db.Classes
-                                 where c.Location == location
-                                 && c.SemesterSeason == season
-                                 && c.SemesterYear == year
-                                 && (start.TimeOfDay >= c.StartTime && start.TimeOfDay <= c.EndTime)
-                                 || (end.TimeOfDay >= c.StartTime && end.TimeOfDay <= c.EndTime)
-                                 || (c.StartTime >= start.TimeOfDay && c.StartTime <= end.TimeOfDay)
-                                 || (c.EndTime >= start.TimeOfDay && c.EndTime <= end.TimeOfDay)
-                                 select c;
+            var ifSameTime = from c in db.Classes
+                                where c.Location == location
+                                && c.SemesterSeason == season
+                                && c.SemesterYear == year
+                                && ((start.TimeOfDay >= c.StartTime && start.TimeOfDay <= c.EndTime)
+                                || (end.TimeOfDay >= c.StartTime && end.TimeOfDay <= c.EndTime)
+                                || (c.StartTime >= start.TimeOfDay && c.StartTime <= end.TimeOfDay)
+                                || (c.EndTime >= start.TimeOfDay && c.EndTime <= end.TimeOfDay))
+                                select c;
 
             var sameOffering = from c in db.Classes
                                join courses in db.Courses

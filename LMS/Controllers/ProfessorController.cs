@@ -164,41 +164,34 @@ namespace LMS.Controllers
     {
             using (Team14LMSContext db = new Team14LMSContext())
             {
-
-                    var query = from co in db.Courses
-                                join cl in db.Classes
-                                on co.CourseId equals cl.CourseId
-                                into coCl
-
-                                from j in coCl.DefaultIfEmpty()
+                   var query = from a in db.Assignments
                                 join ac in db.AssignmentCategories
-                                on j.ClassId equals ac.ClassId
-                                into ccac
+                                on a.CategoryId equals ac.CategoryId
+                                into c
+                                from cat in c.DefaultIfEmpty()
 
-                                from j1 in ccac.DefaultIfEmpty()
-                                join a in db.Assignments
-                                on j1.CategoryId equals a.CategoryId
-                                into acas
+                                join cl in db.Classes
+                                on cat.ClassId equals cl.ClassId
+                                into cla
+                                from classes in cla.DefaultIfEmpty()
 
-                                from j2 in acas.DefaultIfEmpty()
-                                where co.Department == subject
-                                && co.Number == num
-                                && j.SemesterSeason == season
-                                && j.SemesterYear == year
-                                && j1.Name == category
+                                join cr in db.Courses
+                                on classes.CourseId equals cr.CourseId
+                                into f
+                                from final in f.DefaultIfEmpty()
+
+                                where final.Department == subject
+                                && final.Number == num
+                                && classes.SemesterSeason == season
+                                && classes.SemesterYear == year
+                                && cat.Name == category
 
                                 select new
                                 {
-                                    /// "aname" - The assignment name
-                                    /// "cname" - The assignment category name.
-                                    /// "due" - The due DateTime
-                                    /// "submissions" - The number of submissions to the assignment
-
-                                    aname = j2.Name,
-                                    cname = j1.Name,
-                                    due = j2.Due,
-                                    // what would be the best way to get the count of this??
-                                    submissions = (from s in db.Submission where s.AssignmentId == j2.AssignmentId select s).Count()
+                                    aname = a.Name,
+                                    cname = cat.Name,
+                                    due = a.Due,
+                                    submissions = (from s in db.Submission where s.AssignmentId == a.AssignmentId select s).Count()
                                 };
 
                 return Json(query.ToArray());
@@ -222,29 +215,26 @@ namespace LMS.Controllers
     {
             using (Team14LMSContext db = new Team14LMSContext())
             {
-                var query = from co in db.Courses
+                var query = from cat in db.AssignmentCategories
                             join cl in db.Classes
-                            on co.CourseId equals cl.CourseId
-                            into coCl
+                            on cat.ClassId equals cl.ClassId
+                            into cla
+                            from classes in cla.DefaultIfEmpty()
 
-                            from j in coCl.DefaultIfEmpty()
-                            join ac in db.AssignmentCategories
-                            on j.ClassId equals ac.ClassId
-                            into ccac
+                            join cr in db.Courses
+                            on classes.CourseId equals cr.CourseId
+                            into f
+                            from final in f.DefaultIfEmpty()
 
-                            from j1 in ccac.DefaultIfEmpty()
-                            where co.Department == subject
-                            && co.Number == num
-                            && j.SemesterSeason == season
-                            && j.SemesterYear == year
+                            where final.Department == subject
+                            && final.Number == num
+                            && classes.SemesterSeason == season
+                            && classes.SemesterYear == year
 
                             select new
                             {
-                                /// "name" - The category name
-                                /// "weight" - The category weight
-
-                                name = j1.Name,
-                                weight = j1.Weight
+                                name = cat.Name,
+                                weight = cat.Weight
                             };
 
                 return Json(query.ToArray());
@@ -284,8 +274,60 @@ namespace LMS.Controllers
 	/// false if an assignment with the same name already exists in the same assignment category.</returns>
     public IActionResult CreateAssignment(string subject, int num, string season, int year, string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
     {
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var classWithCat = from cat in db.AssignmentCategories
+                                   join cl in db.Classes
+                                   on cat.ClassId equals cl.ClassId
+                                   into cla
+                                   from classes in cla.DefaultIfEmpty()
 
-      return Json(new { success = false });
+                                   join cr in db.Courses
+                                   on classes.CourseId equals cr.CourseId
+                                   into f
+                                   from final in f.DefaultIfEmpty()
+
+                                   where cat.Name == category
+                                   && final.Department == subject
+                                   && final.Number == num
+                                   && classes.SemesterSeason == season
+                                   && classes.SemesterYear == year
+                                   select new
+                                   {
+                                       classID = classes.ClassId,
+                                       catID = cat.CategoryId
+                                   };
+
+                var isAssignment = from c in classWithCat
+                                   join a in db.Assignments
+                                   on c.catID equals a.CategoryId
+                                   into ca
+                                   from assign in ca.DefaultIfEmpty()
+
+                                   where assign.Name == asgname
+
+                                   select assign;
+
+                if (isAssignment.ToArray().Count() > 0)
+                {
+                    return Json(new { success = false });
+                }
+                else
+                {
+                    Assignments a = new Assignments();
+                    a.CategoryId = (uint)classWithCat.ToArray()[0].catID;
+                    a.Name = asgname;
+                    a.Points = (uint)asgpoints;
+                    a.Contents = asgcontents;
+                    a.Due = asgdue;
+
+                    db.Assignments.Add(a);
+
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+
+            }
     }
 
 

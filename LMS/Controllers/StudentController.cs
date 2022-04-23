@@ -231,6 +231,8 @@ namespace LMS.Controllers
                 s.Score = 0;
                 s.Time = DateTime.Now;
 
+                db.Submission.Add(s);
+
                 db.SaveChanges();
             }
 
@@ -283,8 +285,9 @@ namespace LMS.Controllers
                     Enrolled e = new Enrolled();
                     e.StudentId = uid;
                     e.ClassId = enrolled.ToArray()[0].classID;
-                    db.SaveChanges();
 
+                    db.Enrolled.Add(e);
+                    db.SaveChanges();
                     return Json(new { success = true });
                 }
         }
