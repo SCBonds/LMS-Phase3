@@ -263,9 +263,57 @@ namespace LMS.Controllers
     /// <returns>A JSON object containing {success = true/false},
     ///	false if an assignment category with the same name already exists in the same class.</returns>
     public IActionResult CreateAssignmentCategory(string subject, int num, string season, int year, string category, int catweight)
-    {    
+    {
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var categoryPresent = from course in db.Courses
+                                join cl in db.Classes
+                                on course.CourseId equals cl.CourseId
+                                into cocl
 
-      return Json(new { success = false });
+                                from cc in cocl
+                                join ac in db.AssignmentCategories
+                                on cc.ClassId equals ac.ClassId
+                                into ccAssCat
+
+                                from ccac in ccAssCat
+                                where course.Department == subject
+                                && course.Number == num
+                                && cc.SemesterSeason == season
+                                && cc.SemesterYear == year
+                                && ccac.Name == category
+                                select ccac;
+
+                if (categoryPresent.Count() == 0) 
+                {
+                    var classID = from course in db.Courses
+                                  join cl in db.Classes
+                                  on course.CourseId equals cl.CourseId
+                                  where course.Department == subject
+                                  && course.Number == num
+                                  && cl.SemesterSeason == season
+                                  && cl.SemesterYear == year
+                                  select cl.ClassId;
+
+
+                    AssignmentCategories assCat = new AssignmentCategories();
+                    // still need classID
+                    assCat.Name = category;
+                    assCat.Weight = (uint)catweight;
+                    assCat.ClassId = classID.ToArray()[0];
+
+                    db.AssignmentCategories.Add(assCat);
+
+                    db.SaveChanges();
+
+                    return Json(new { success = true });
+                }
+
+            }
+
+            
+
+            return Json(new { success = false });
     }
 
     /// <summary>
