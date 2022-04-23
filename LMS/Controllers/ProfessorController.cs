@@ -238,9 +238,6 @@ namespace LMS.Controllers
                                     submissions = (from s in db.Submission where s.AssignmentId == j2.AssignmentId select s).Count()
                                 };
 
-                
-                
-
                 return Json(query.ToArray());
             }
     }
@@ -283,13 +280,12 @@ namespace LMS.Controllers
                                 /// "name" - The category name
                                 /// "weight" - The category weight
 
-                                name = j.Name,
-                                weight = j1.Name
+                                name = j1.Name,
+                                weight = j1.Weight
                             };
-            }
-                
 
-            return Json(null);
+                return Json(query.ToArray());
+            }
     }
 
     /// <summary>
