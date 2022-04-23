@@ -487,7 +487,6 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-            // Queries all three user databases and stores largest uID in "idNum"
             int idNum = 0000000;
 
             var query = from s in db.Students
@@ -510,8 +509,8 @@ namespace LMS.Controllers
             if (idNum < q3)
                 idNum = q3;
 
-            // New number for new UID
             idNum = idNum + 1;
+
 
             switch (role)
             {

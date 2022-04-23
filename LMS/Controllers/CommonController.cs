@@ -86,6 +86,7 @@ namespace LMS.Controllers
                             {
                                 subject = d.Subject,
                                 dname = d.Name,
+                                // using nested query to return array of courses
                                 courses = (from c in db.Courses where c.Department == d.Subject select new { number = c.Number, cname = c.Name })
                             };
 
@@ -273,6 +274,8 @@ namespace LMS.Controllers
         {
             using (Team14LMSContext db = new Team14LMSContext())
             {
+                // Three seperate queries to determine what position the uid corresponds to
+
                 var stud = from stu in db.Students
                            where stu.UId == uid
                            select new
@@ -302,21 +305,22 @@ namespace LMS.Controllers
                                department = pro.Department
                            };
 
+                // If student return
                 if (stud.ToArray().Count() > 0) 
                 {
                     return Json(stud.ToArray()[0]);
                 }
-
+                // If admin return
                 if (admin.ToArray().Count() > 0)
                 {
                     return Json(admin.ToArray()[0]);
                 }
-
+                // If professor return
                 if (prof.ToArray().Count() > 0)
                 {
                     return Json(prof.ToArray()[0]);
                 }
-
+                // else, unsuccesful
                 return Json(new { success = false });
             }
         }
