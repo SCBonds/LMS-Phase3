@@ -162,8 +162,52 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
     {
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var query = from co in db.Courses
+                            join cl in db.Classes
+                            on co.CourseId equals cl.CourseId
+                            into coCl
 
-      return Json(null);
+                            from j in coCl.DefaultIfEmpty()
+                            join ac in db.AssignmentCategories
+                            on j.ClassId equals ac.ClassId
+                            into ccac
+
+                            from j1 in ccac.DefaultIfEmpty()
+                            join a in db.Assignments
+                            on j1.CategoryId equals a.CategoryId
+                            into acas
+
+                            from j2 in acas.DefaultIfEmpty()
+                            join s in db.Submission
+                            on j2.AssignmentId equals s.AssignmentId
+                            into all
+
+                            from j3 in all.DefaultIfEmpty()
+                            where co.Department == subject
+                            && co.Number == num
+                            && j.SemesterSeason == season
+                            && j.SemesterYear == year
+                            && j1.Name == category
+
+                            select new
+                            {
+                                /// "aname" - The assignment name
+                                /// "cname" - The assignment category name.
+                                /// "due" - The due DateTime
+                                /// "submissions" - The number of submissions to the assignment
+
+                                aname = j2.Name,
+                                cname = j1.Name,
+                                due = j2.Due,
+                                // what would be the best way to get the count of this??
+                                submissions = j3.
+                            };
+
+                return Json(query.ToArray());
+            }
+            return Json(null);
     }
 
 
