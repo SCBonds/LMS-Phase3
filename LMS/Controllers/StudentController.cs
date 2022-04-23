@@ -182,6 +182,7 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
+            // query to return the assignmentID
             var getAssignment = from a in db.Assignments
                         join ac in db.AssignmentCategories
                         on a.CategoryId equals ac.CategoryId
@@ -215,6 +216,7 @@ namespace LMS.Controllers
                                 && s.StudentId == uid
                                 select s;
 
+            // If submission is already present
             if (submission.ToArray().Count() > 0)
             {
                 submission.ToArray()[0].Contents = contents;
@@ -222,6 +224,7 @@ namespace LMS.Controllers
 
                 db.SaveChanges();
             }
+            // Else, create a *new* assignment submission
             else
             {
                 Submission s = new Submission();
@@ -282,6 +285,7 @@ namespace LMS.Controllers
                 {
                     return Json(new { success = false });
                 }
+                // Else, add the student to enrolled
                 else
                 {
                     Enrolled e = new Enrolled();
@@ -315,10 +319,12 @@ namespace LMS.Controllers
         {
             double GPA = 0;
             int nonNullCount = 0;
+            // Query to get grade
             var query = from e in db.Enrolled
                         where e.StudentId == uid
                         select e.Grade;
 
+            // For each grade returned by the query, check against case statements to determine numerical GPA
             foreach (var item in query.ToArray())
             {
                 if (item != null)

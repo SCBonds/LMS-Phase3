@@ -97,12 +97,14 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
+            // Query to check if course already exists
             var query = from c in db.Courses
                         where c.Number == number
                         && c.Name == name
                         && c.Department == subject
                         select c;
             
+            // checking to see if course already exists
             if(query.Count() < 1)
             {
                 Courses course = new Courses();
@@ -141,7 +143,7 @@ namespace LMS.Controllers
     {
         using (Team14LMSContext db = new Team14LMSContext())
         {
-            // Query that determines if class information will overlap with any other class times
+            // Query to see if class time is occupied
             var ifSameTime = from c in db.Classes
                                 where c.Location == location
                                 && c.SemesterSeason == season
@@ -152,25 +154,27 @@ namespace LMS.Controllers
                                 || (c.EndTime >= start.TimeOfDay && c.EndTime <= end.TimeOfDay))
                                 select c;
 
-            // Query that determines if class information will create a duplicate listing
-            var sameOffering = from c in db.Classes
-                            join courses in db.Courses
-                            on c.CourseId equals courses.CourseId
-                            into data
-                            from all in data.DefaultIfEmpty()
+             // Query to see if class is already offered
+             var sameOffering = from c in db.Classes
+                               join courses in db.Courses
+                               on c.CourseId equals courses.CourseId
+                               into data
+                               from all in data.DefaultIfEmpty()
 
-                            where all.Number == number
-                            && all.Department == subject
-                            && c.SemesterSeason == season
-                            && c.SemesterYear == year
-                            select c;
-
-            // Gets the courseID for insert
+                               where all.Number == number
+                               && all.Department == subject
+                               && c.SemesterSeason == season
+                               && c.SemesterYear == year
+                               select c;
+            
+            // Query to return the courseID
             var courseID = from course in db.Courses
                             where course.Department == subject
                             && course.Number == number
                             select course.CourseId;
-
+            
+            // if, elif, else statement to make sure conditions are met to create a new class
+            // class is created in else statement
             if (ifSameTime.Count() >= 1)
             {
                 return Json(new { success = false });

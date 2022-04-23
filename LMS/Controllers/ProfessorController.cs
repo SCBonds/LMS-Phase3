@@ -184,6 +184,7 @@ namespace LMS.Controllers
                                 && final.Number == num
                                 && classes.SemesterSeason == season
                                 && classes.SemesterYear == year
+                                && cat.Name == category
 
                                 select new
                                 {
@@ -193,23 +194,9 @@ namespace LMS.Controllers
                                     submissions = (from s in db.Submission where s.AssignmentId == a.AssignmentId select s).Count()
                                 };
 
-                    var query2 = from x in query
-                                 where x.cname == category
-                                 select new
-                                 {
-                                     aname = x.aname,
-                                     cname = x.cname,
-                                     due = x.due,
-                                     submissions = x.submissions
-                                 };
-
-                if (category == null)
-                    return Json(query.ToArray());
-                else
-                    return Json(query2.ToArray());
-
+                return Json(query.ToArray());
             }
-        }
+    }
 
 
     /// <summary>
