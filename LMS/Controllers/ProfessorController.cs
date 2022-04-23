@@ -202,7 +202,7 @@ namespace LMS.Controllers
                                 cname = j1.Name,
                                 due = j2.Due,
                                 // what would be the best way to get the count of this??
-                                submissions = j3.
+                                submissions = (from asses in j3 join s in db.Submission on  select).Count()
                             };
 
                 return Json(query.ToArray());
