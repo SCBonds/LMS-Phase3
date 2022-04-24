@@ -388,6 +388,17 @@ namespace LMS.Controllers
                     db.Assignments.Add(a);
 
                     db.SaveChanges();
+
+
+                    var updateGrades = from e in db.Enrolled
+                                       where e.ClassId == classWithCat.ToArray()[0].classID
+                                       select e;
+
+                    foreach (var student in updateGrades.ToArray())
+                    {
+                        UpdateClassGrade(student.StudentId, classWithCat.ToArray()[0].classID);
+                    }
+
                     return Json(new { success = true });
                 }
 
@@ -524,9 +535,9 @@ namespace LMS.Controllers
                 query.ToArray()[0].s.Score = (uint)score;
                 db.SaveChanges();
 
-                    //UpdateClassGrade(uid, query.ToArray()[0].classID);
+                UpdateClassGrade(uid, query.ToArray()[0].classID);
 
-                    return Json(new { success = true });
+                return Json(new { success = true });
             }
             else
                 return Json(new { success = false });
@@ -574,116 +585,123 @@ namespace LMS.Controllers
 
         /*******End code to modify********/
 
-        //public void UpdateClassGrade(string uid, uint ClassID)
-        //{
-        //    using (Team14LMSContext db = new Team14LMSContext())
-        //    {
-        //        var selectedClass = from c in db.Classes
-        //                            where c.ClassId == ClassID
-        //                            select new { catCount = c.AssignmentCategories.Count() };
+        public void UpdateClassGrade(string uid, uint ClassID)
+        {
+            using (Team14LMSContext db = new Team14LMSContext())
+            {
+                var selectedClass = from c in db.Classes
+                                    where c.ClassId == ClassID
+                                    select new { catCount = c.AssignmentCategories.Count() };
 
 
-        //        var getNonEmptyCategories = from ac in db.AssignmentCategories
-        //                                    where ac.ClassId == ClassID
-        //                                    && ac.Assignments.Count() > 0
+                var getNonEmptyCategories = from ac in db.AssignmentCategories
+                                            where ac.ClassId == ClassID
+                                            && ac.Assignments.Count() > 0
 
-        //                                    select new
-        //                                    {
-        //                                        catId = ac.CategoryId,
-        //                                        catWeight = ac.Weight,
-        //                                        assignments = ac.Assignments.ToArray()
-        //                                    };
-        //        long totalCatWeight = 0;
-        //        long totalWeightedVal = 0;
-        //        for ( int i = 0; i < selectedClass.ToArray()[0].catCount; i++)
-        //        {
+                                            select new
+                                            {
+                                                catId = ac.CategoryId,
+                                                catWeight = ac.Weight,
+                                                assignments = ac.Assignments.ToArray()
+                                            };
+                double totalCatWeight = 0;
+                double totalWeightedVal = 0;
+                for (int i = 0; i < selectedClass.ToArray()[0].catCount; i++)
+                {
 
-        //            long totalPoints = 0;
-        //            long totalScore = 0;
-        //            foreach (var x in getNonEmptyCategories.ToArray()[i].assignments)
-        //            {
-        //                totalPoints = totalPoints + x.Points;
+                    double totalPoints = 0;
+                    double totalScore = 0;
+                    foreach (var x in getNonEmptyCategories.ToArray()[i].assignments)
+                    {
+                        totalPoints = totalPoints + x.Points;
 
-        //                var getSubmissions = from s in db.Submission
-        //                                     where x.AssignmentId == s.AssignmentId
-        //                                     select new { score = s.Score };
-
-
-        //                for(int r = 0; r < getSubmissions.ToArray().Count(); r++)
-        //                {
-        //                    totalScore = totalScore + getSubmissions.ToArray()[r].score;
-        //                }
-        //            }
-
-        //            long p = totalScore / totalPoints;
-
-        //            long weighted = p * getNonEmptyCategories.ToArray()[0].catWeight;
-
-        //            totalWeightedVal = totalWeightedVal + weighted;
-
-        //            totalCatWeight = totalCatWeight + getNonEmptyCategories.ToArray()[i].catWeight;
+                        var getSubmissions = from s in db.Submission
+                                             where x.AssignmentId == s.AssignmentId
+                                             select new { score = s.Score };
 
 
-        //        }
+                        for (int r = 0; r < getSubmissions.ToArray().Count(); r++)
+                        {
+                            totalScore = totalScore + getSubmissions.ToArray()[r].score;
+                        }
+                    }
 
-        //        long scalingFactor = 100 / totalCatWeight;
+                    if (getNonEmptyCategories.ToArray()[i].assignments.Count() > 0)
+                    {
+                        double p = totalScore / totalPoints;
 
-        //        long percent = scalingFactor * totalWeightedVal;
+                        double weighted = p * getNonEmptyCategories.ToArray()[i].catWeight;
 
-        //        string letterGrade = "";
+                        totalWeightedVal = totalWeightedVal + weighted;
 
-        //        if (percent >= .93)
-        //        {
-        //            letterGrade = "A";
-        //        }
-        //        else if (percent >= .90)
-        //        {
-        //            letterGrade = "A-";
-        //        }
-        //        else if (percent >= .87)
-        //        {
-        //            letterGrade = "B+";
-        //        }
-        //        else if (percent >= .83)
-        //        {
-        //            letterGrade = "B";
-        //        }
-        //        else if (percent >= .80)
-        //        {
-        //            letterGrade = "B-";
-        //        }
-        //        else if (percent >= .77)
-        //        {
-        //            letterGrade = "C+";
-        //        }
-        //        else if (percent >= .73)
-        //        {
-        //            letterGrade = "C";
-        //        }
-        //        else if (percent >= .70)
-        //        {
-        //            letterGrade = "C-";
-        //        }
-        //        else if (percent >= .67)
-        //        {
-        //            letterGrade = "D+";
-        //        }
-        //        else if (percent >= .63)
-        //        {
-        //            letterGrade = "D";
-        //        }
-        //        else if (percent >= .60)
-        //        {
-        //            letterGrade = "D-";
-        //        }
-        //        else
-        //        {
-        //            letterGrade = "E";
-        //        }
+                        totalCatWeight = totalCatWeight + getNonEmptyCategories.ToArray()[i].catWeight;
+                    }
 
-        //        Console.WriteLine(letterGrade);
-        //    }
-        //}
+                }
 
-  }
+                double scalingFactor = 100 / totalCatWeight;
+
+                double percent = (scalingFactor * totalWeightedVal) / 100;
+
+                string letterGrade = "";
+
+                if (percent >= .93)
+                {
+                    letterGrade = "A";
+                }
+                else if (percent >= .90)
+                {
+                    letterGrade = "A-";
+                }
+                else if (percent >= .87)
+                {
+                    letterGrade = "B+";
+                }
+                else if (percent >= .83)
+                {
+                    letterGrade = "B";
+                }
+                else if (percent >= .80)
+                {
+                    letterGrade = "B-";
+                }
+                else if (percent >= .77)
+                {
+                    letterGrade = "C+";
+                }
+                else if (percent >= .73)
+                {
+                    letterGrade = "C";
+                }
+                else if (percent >= .70)
+                {
+                    letterGrade = "C-";
+                }
+                else if (percent >= .67)
+                {
+                    letterGrade = "D+";
+                }
+                else if (percent >= .63)
+                {
+                    letterGrade = "D";
+                }
+                else if (percent >= .60)
+                {
+                    letterGrade = "D-";
+                }
+                else
+                {
+                    letterGrade = "E";
+                }
+
+                var getEnrolled = from e in db.Enrolled
+                                  where e.StudentId == uid
+                                  && e.ClassId == ClassID
+                                  select e;
+
+                getEnrolled.ToArray()[0].Grade = letterGrade;
+                db.SaveChanges();
+            }
+        }
+    }
 }
