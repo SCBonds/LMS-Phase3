@@ -291,7 +291,7 @@ namespace LMS.Controllers
                     Enrolled e = new Enrolled();
                     e.StudentId = uid;
                     e.ClassId = e1.ToArray()[0].classID;
-                    e.Grade = "";
+                    e.Grade = "--";
 
                     db.Enrolled.Add(e);
                     db.SaveChanges();
@@ -368,7 +368,8 @@ namespace LMS.Controllers
                             GPA = GPA + 0.0;
                             break;
                     }
-                    nonNullCount++;
+                    if (item.ToString() != "" && item.ToString() != "--")
+                        nonNullCount++;
                 }
             }
 
